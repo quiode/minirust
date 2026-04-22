@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This file is used run a test using `rustc` instead of `minimize`.
 
