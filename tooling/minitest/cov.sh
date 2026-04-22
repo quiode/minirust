@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 RUSTFLAGS="-C instrument-coverage" cargo test --tests
 llvm-profdata merge -sparse $(find -name "*.profraw") -o out.profdata

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Helper script for working with MiniRust.
 # Usage:
 # - `./mini test`: run the test suite
