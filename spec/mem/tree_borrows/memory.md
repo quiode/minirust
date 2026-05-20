@@ -113,7 +113,7 @@ impl<T: Target> TreeBorrowsMemory<T> {
             // Add the new node to the tree
             let child_path = allocation.extra.root.add_node(parent_path, child_node);
 
-            // Perform a read access on all bytes inside the pointee whose permission requires such an access.
+            // Perform a read or write access on all bytes inside the pointee whose permission requires such an access.
             for (idx, perm) in settings.inside.iter().enumerate() {
                 let idx = Int::from(idx); // FIXME: we need a version of `enumerate` that yields `Int`s.
                 let idx = Size::from_bytes(idx).unwrap();

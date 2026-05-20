@@ -83,23 +83,14 @@ impl PermissionUnprot {
         // references, since unprotected references never trigger UB for foreign accesses.
         false
     }
-}
-```
 
-When a new node is created, it causes an implicit access, usually an implicit read.
-This is so the optimizer can insert reads as soon as a reference is created.
-Note that the implicit read is not universal, and depends on the permission.
-The details are defined by the `init_access` function.
-
-```rust
-impl PermissionUnprot {
     fn init_access(self) -> Option<AccessKind> {
         // Everything except for `Cell` gets an initial read access.
+        // Write's are not possible for unprotected references.
         match self {
             PermissionUnprot::Cell => None,
             _ => Some(AccessKind::Read)
         }
     }
 }
-
 ```
