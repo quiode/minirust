@@ -63,7 +63,7 @@ fn start_unwind_in_main() {
     let f = p.finish_function(f);
     let p = p.finish_program(f);
     dump_program(p);
-    assert_eq!(get_stdout::<BasicMem>(p).unwrap(), &["42"]);
+    assert_eq!(get_stdout::<BasicMem>(p, Default::default()).unwrap(), &["42"]);
 }
 
 /// This test calls a recursive function that will panic after some recursive calls.
@@ -131,7 +131,7 @@ fn unwind_recursive_func() {
     let p = p.finish_program(main_fn);
     dump_program(p);
     assert_eq!(
-        get_stdout::<BasicMem>(p).unwrap(),
+        get_stdout::<BasicMem>(p, Default::default()).unwrap(),
         &["6", "5", "4", "3", "2", "1", "0", "1", "2", "3", "4", "5", "6",]
     );
 }
@@ -174,7 +174,7 @@ fn statements_in_cleanup() {
     };
     let p = p.finish_program(main_fn);
     dump_program(p);
-    assert_eq!(get_stdout::<BasicMem>(p).unwrap(), &["520"]);
+    assert_eq!(get_stdout::<BasicMem>(p, Default::default()).unwrap(), &["520"]);
 }
 
 /// This test prints before and after a function call.
@@ -204,7 +204,7 @@ fn print_after_unwind() {
     };
     let p = p.finish_program(main_fn);
     dump_program(p);
-    assert_eq!(get_stdout::<BasicMem>(p).unwrap(), &["1"]);
+    assert_eq!(get_stdout::<BasicMem>(p, Default::default()).unwrap(), &["1"]);
 }
 
 /// This test resumes unwinding in the start function, which should result in UB.

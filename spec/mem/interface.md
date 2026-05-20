@@ -84,7 +84,10 @@ pub trait Memory {
     /// Extra information for each stack frame.
     type FrameExtra;
 
-    fn new() -> Self;
+    /// Parameters controlling memory model behavior, passed at construction time.
+    type Params: Default;
+
+    fn new(params: Self::Params) -> Self;
 
     /// Create a new allocation.
     /// The initial contents of the allocation are `AbstractByte::Uninit`.
