@@ -42,7 +42,7 @@ fn catch_unwind() {
 
     let p = p.finish_program(main_fn);
     dump_program(p);
-    assert_eq!(get_stdout::<BasicMem>(p).unwrap(), &["1", "2", "3", "5", "6"]);
+    assert_eq!(get_stdout::<BasicMem>(p, Default::default()).unwrap(), &["1", "2", "3", "5", "6"]);
 }
 
 #[test]
@@ -86,5 +86,5 @@ fn catch_no_unwind() {
 
     let p = p.finish_program(main_fn);
     dump_program(p);
-    assert_eq!(get_stdout::<BasicMem>(p).unwrap(), &["1", "2", "4", "6"]);
+    assert_eq!(get_stdout::<BasicMem>(p, Default::default()).unwrap(), &["1", "2", "4", "6"]);
 }

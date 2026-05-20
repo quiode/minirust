@@ -1,7 +1,7 @@
 //! This module provides utilities for the terminal user-interface.
 //! That is, it bundles common command line argument parsing and error message rendering.
 
-use minirust_rs::{lang::Program, prelude::TerminationInfo};
+use minirust_rs::{lang::Program, mem::TreeBorrowsParams, prelude::TerminationInfo};
 
 use crate::{BasicMem, TreeBorrowMem, run::run_program};
 
@@ -17,11 +17,12 @@ macro_rules! show_error {
 
 pub struct MinirustMachineConfig {
     tree_borrows: bool,
+    implicit_writes: bool,
 }
 
 impl Default for MinirustMachineConfig {
     fn default() -> Self {
-        Self { tree_borrows: false }
+        Self { tree_borrows: false, implicit_writes: false }
     }
 }
 
@@ -33,6 +34,7 @@ impl MinirustMachineConfig {
         };
         match arg {
             "tree-borrows" => self.tree_borrows = true,
+            "implicit-writes" => self.implicit_writes = true,
             _ => show_error!("Unknown argument --minirust-{arg}!"),
         }
         true
@@ -41,9 +43,9 @@ impl MinirustMachineConfig {
     /// Runs the program using [`run_program`]. The memory model/machine is constructed according to this config.
     pub fn run_prog(&self, prog: Program) -> TerminationInfo {
         if self.tree_borrows {
-            run_program::<TreeBorrowMem>(prog)
+            run_program::<TreeBorrowMem>(prog, TreeBorrowsParams { implicit_writes: self.implicit_writes })
         } else {
-            run_program::<BasicMem>(prog)
+            run_program::<BasicMem>(prog, ())
         }
     }
 

@@ -48,8 +48,18 @@ type TreeBorrowsProvenance = (AllocId, Path);
 The memory itself largely reuses the basic memory infrastructure, with the tree as extra state.
 
 ```rust
+/// Global parameters controlling Tree Borrows behavior.
+#[derive(Default)]
+pub struct TreeBorrowsParams {
+    /// Whether implicit writes are enabled or not.
+    pub implicit_writes: bool,
+}
+```
+
+```rust
 pub struct TreeBorrowsMemory<T: Target> {
     mem: BasicMemory<T, Path, TreeBorrowsAllocationExtra>,
+    params: TreeBorrowsParams,
 }
 
 pub struct TreeBorrowsFrameExtra {
@@ -173,9 +183,10 @@ impl<T: Target> Memory for TreeBorrowsMemory<T> {
     type Provenance = TreeBorrowsProvenance;
     type FrameExtra = TreeBorrowsFrameExtra;
     type T = T;
+    type Params = TreeBorrowsParams;
 
-    fn new() -> Self {
-        Self { mem: BasicMemory::new() }
+    fn new(params: TreeBorrowsParams) -> Self {
+        Self { mem: BasicMemory::new(), params }
     }
 
     fn allocate(&mut self, kind: AllocationKind, size: Size, align: Align) -> NdResult<ThinPointer<Self::Provenance>>  {
@@ -233,7 +244,7 @@ impl<T: Target> Memory for TreeBorrowsMemory<T> {
         fn_entry: bool,
         vtable_lookup: impl Fn(ThinPointer<Self::Provenance>) -> crate::lang::VTable + 'static,
     ) -> Result<Pointer<Self::Provenance>> {
-        ret(if let Some(perms) = ReborrowSettings::new(ptr, ptr_type, fn_entry, vtable_lookup) {
+        ret(if let Some(perms) = ReborrowSettings::new(ptr, ptr_type, fn_entry, self.params, vtable_lookup) {
             self.reborrow(ptr.thin_pointer, perms, frame_extra)?.widen(ptr.metadata)
         } else {
             ptr

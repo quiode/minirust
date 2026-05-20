@@ -126,10 +126,10 @@ The transition function simply dispatches to evaluating the next statement/termi
 
 ```rust
 impl<M: Memory> Machine<M> {
-    pub fn new(prog: Program, stdout: DynWrite, stderr: DynWrite) -> NdResult<Machine<M>> {
+    pub fn new(prog: Program, mem_params: M::Params, stdout: DynWrite, stderr: DynWrite) -> NdResult<Machine<M>> {
         prog.check_wf::<M::T>()?;
 
-        let mut mem = ConcurrentMemory::<M>::new();
+        let mut mem = ConcurrentMemory::<M>::new(mem_params);
         let mut global_ptrs = Map::new();
         let mut fn_ptrs = Map::new();
         let mut vtable_ptrs = Map::new();
