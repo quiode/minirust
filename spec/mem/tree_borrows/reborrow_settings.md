@@ -95,6 +95,7 @@ impl ReborrowSettings {
         fn_entry: bool,
         vtable_lookup: impl Fn(ThinPointer<TreeBorrowsProvenance>) -> crate::lang::VTable + 'static,
     ) -> Option<Self> {
+        // Returns None for `Raw`, `FnPtr` and `VTablePtr`, so `ptr_type` can only be `Ref` and `Box` from here.
         let Some(pointee_info) = ptr_type.safe_pointee() else {
             return None;
         };
@@ -115,26 +116,57 @@ impl ReborrowSettings {
             Protected::No
         };
 
-        // Helper to choose the correct permission, based on protection.
-        let mk_perm = |unprot, prot| if protected.yes() { Permission::Prot(prot) } else { Permission::Unprot(unprot) };
+        // TODO: check if implicit writes is enabled using a global flag
+        // Only protected references get an implicit write.
+        let implicit_writes_enabled = protected.yes();
 
-        // Determine permissions.
-        let no_cell_perm = match ptr_type {
-            // Shared references are frozen.
-            PtrType::Ref { mutbl: Mutability::Immutable, .. } => mk_perm(PermissionUnprot::Frozen, PermissionProt::Frozen { had_local_read: false }),
-            // Mutable references and Boxes are reserved.
-            _ => mk_perm(PermissionUnprot::Reserved, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false }),
+
+        // Helper to compute the permission, given whether it is inside the pointee and whether it is frozen.
+        let perm = |inside: bool, frozen: bool| {
+            // Helper to choose the correct permission, based on protection.
+            let mk_perm = |unprot, prot| if protected.yes() { Permission::Prot(prot) } else { Permission::Unprot(unprot) };
+
+            match ptr_type {
+                // Shared references
+                PtrType::Ref { mutbl: Mutability::Immutable, .. } =>
+                    if frozen {
+                        mk_perm(PermissionUnprot::Frozen, PermissionProt::Frozen { had_local_read: false })
+                    } else {
+                        mk_perm(PermissionUnprot::Cell, PermissionProt::Cell)
+                    },
+                // Mutable references
+                PtrType::Ref { mutbl: Mutability::Mutable, .. } =>
+                    if implicit_writes_enabled && inside {
+                        // We cannot use `Unique` for the outside part.
+                        mk_perm(PermissionUnprot::Unique, PermissionProt::Unique)
+                    } else if protected.yes() || frozen {
+                        // We also use this for protected `&mut UnsafeCell` as otherwise adding `noalias` would not be sound.
+                        mk_perm(PermissionUnprot::Reserved, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
+                    } else {
+                        // Unprotected mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
+                        mk_perm(PermissionUnprot::ReservedIm, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
+                    },
+                // Boxes
+                PtrType::Box { .. } =>
+                    if implicit_writes_enabled && inside {
+                        // Boxes are treated the same as mutable references.
+                        mk_perm(PermissionUnprot::Unique, PermissionProt::Unique)
+                    } else if protected.yes() || frozen {
+                        // We also use this for protected `Box<UnsafeCell>` as otherwise adding
+                        // `noalias` would not be sound.
+                        mk_perm(PermissionUnprot::Reserved, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
+                    } else {
+                        mk_perm(PermissionUnprot::ReservedIm, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
+                    },
+                // Cannot occur: `safe_pointee()` returns `None` for these variants.
+                PtrType::Raw { .. } | PtrType::FnPtr | PtrType::VTablePtr(_) => panic!("unreachable"), // The function should have returned `None` for those at the start.
+            }
         };
-        let cell_perm = match ptr_type {
-            // Shared references to UnsafeCell use the "transparent" Cell permission.
-            PtrType::Ref { mutbl: Mutability::Immutable, .. } => mk_perm(PermissionUnprot::Cell, PermissionProt::Cell),
-            // Unprotected mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
-            _ => mk_perm(PermissionUnprot::ReservedIm, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false }),
-        };
+
         let inside = pointee_info.unsafe_cells.freeze_mask(pointee_info.layout, ptr.metadata, vtable_lookup).map(|freeze|
-            if freeze { no_cell_perm } else { cell_perm }
+            perm(true, freeze)
         );
-        let outside = if pointee_info.freeze { no_cell_perm } else { cell_perm };
+        let outside = perm(false, pointee_info.freeze);
 
         Some(ReborrowSettings { protected, inside, outside })
     }
