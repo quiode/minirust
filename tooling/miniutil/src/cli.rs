@@ -20,8 +20,7 @@ macro_rules! show_error {
 
 #[derive(Default)]
 pub struct MinirustMachineConfig {
-    tree_borrows: bool,
-    implicit_writes: bool,
+    tree_borrows: Option<TreeBorrowsParams>,
 }
 
 impl MinirustMachineConfig {
@@ -31,8 +30,16 @@ impl MinirustMachineConfig {
             return false;
         };
         match arg {
-            "tree-borrows" => self.tree_borrows = true,
-            "implicit-writes" => self.implicit_writes = true,
+            "tree-borrows" => self.tree_borrows = Some(Default::default()),
+            "implicit-writes" =>
+                self.tree_borrows
+                    .as_mut()
+                    .unwrap_or_else(|| {
+                        show_error!(
+                            "--minirust-tree-borrows must be set before --minirust-implicit-writes"
+                        )
+                    })
+                    .implicit_writes = true,
             _ => show_error!("Unknown argument --minirust-{arg}!"),
         }
         true
@@ -40,11 +47,8 @@ impl MinirustMachineConfig {
 
     /// Runs the program using [`run_program`]. The memory model/machine is constructed according to this config.
     pub fn run_prog(&self, prog: Program) -> TerminationInfo {
-        if self.tree_borrows {
-            run_program_with_config::<TreeBorrowMem>(
-                prog,
-                TreeBorrowsParams { implicit_writes: self.implicit_writes },
-            )
+        if let Some(params) = self.tree_borrows {
+            run_program_with_config::<TreeBorrowMem>(prog, params)
         } else {
             run_program::<BasicMem>(prog)
         }
