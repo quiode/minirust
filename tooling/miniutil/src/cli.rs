@@ -3,7 +3,10 @@
 
 use minirust_rs::{lang::Program, mem::TreeBorrowsParams, prelude::TerminationInfo};
 
-use crate::{BasicMem, TreeBorrowMem, run::{run_program, run_program_with_config}};
+use crate::{
+    BasicMem, TreeBorrowMem,
+    run::{run_program, run_program_with_config},
+};
 
 pub fn show_error(msg: &impl std::fmt::Display) -> ! {
     eprintln!("fatal error: {msg}");
@@ -15,15 +18,10 @@ macro_rules! show_error {
     ($($tt:tt)*) => {$crate::cli::show_error(&format_args!($($tt)*)) };
 }
 
+#[derive(Default)]
 pub struct MinirustMachineConfig {
     tree_borrows: bool,
     implicit_writes: bool,
-}
-
-impl Default for MinirustMachineConfig {
-    fn default() -> Self {
-        Self { tree_borrows: false, implicit_writes: false }
-    }
 }
 
 impl MinirustMachineConfig {
@@ -43,7 +41,10 @@ impl MinirustMachineConfig {
     /// Runs the program using [`run_program`]. The memory model/machine is constructed according to this config.
     pub fn run_prog(&self, prog: Program) -> TerminationInfo {
         if self.tree_borrows {
-            run_program_with_config::<TreeBorrowMem>(prog, TreeBorrowsParams { implicit_writes: self.implicit_writes })
+            run_program_with_config::<TreeBorrowMem>(
+                prog,
+                TreeBorrowsParams { implicit_writes: self.implicit_writes },
+            )
         } else {
             run_program::<BasicMem>(prog)
         }
