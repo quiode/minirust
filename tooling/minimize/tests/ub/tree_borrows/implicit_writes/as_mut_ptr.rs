@@ -14,7 +14,6 @@ fn main() {
     let _v = *b;
 }
 
-#[inline(never)]
 pub fn as_mut_ptr(x: &mut [u8; 3]) -> *mut u8 {
     x as *mut [u8] as *mut u8
 }

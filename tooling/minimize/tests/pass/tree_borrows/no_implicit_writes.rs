@@ -54,7 +54,6 @@ fn as_mut_ptr_test() {
 
 // This should be the same as the implementation for slice, as this is known to cause errors
 // with implicit writes and we want to test that behavior here.
-#[inline(never)]
 pub fn as_mut_ptr(x: &mut [u8; 3]) -> *mut u8 {
     x as *mut [u8] as *mut u8
 }
