@@ -23,25 +23,25 @@ mod tests;
 
 #[track_caller]
 pub fn assert_stop<M: Memory>(prog: Program) {
-    assert_eq!(run_program::<M>(prog, Default::default()), TerminationInfo::MachineStop);
+    assert_eq!(run_program::<M>(prog), TerminationInfo::MachineStop);
 }
 
 #[track_caller]
 pub fn assert_stop_always<M: Memory>(prog: Program, attempts: usize) {
     for _ in 0..attempts {
-        assert_eq!(run_program::<M>(prog, Default::default()), TerminationInfo::MachineStop);
+        assert_eq!(run_program::<M>(prog), TerminationInfo::MachineStop);
     }
 }
 
 #[track_caller]
 pub fn assert_abort<M: Memory>(prog: Program) {
-    assert_eq!(run_program::<M>(prog, Default::default()), TerminationInfo::Abort);
+    assert_eq!(run_program::<M>(prog), TerminationInfo::Abort);
 }
 
 #[track_caller]
 pub fn assert_ub<M: Memory>(prog: Program, msg: &str) {
     assert_eq!(
-        run_program::<M>(prog, Default::default()),
+        run_program::<M>(prog),
         TerminationInfo::Ub(minirust_rs::prelude::String::from_internal(msg.to_string()))
     );
 }
@@ -50,7 +50,7 @@ pub fn assert_ub<M: Memory>(prog: Program, msg: &str) {
 pub fn assert_ub_eventually<M: Memory>(prog: Program, attempts: usize, msg: &str) {
     let msg = minirust_rs::prelude::String::from_internal(msg.to_string());
     for _ in 0..attempts {
-        match run_program::<M>(prog, Default::default()) {
+        match run_program::<M>(prog) {
             TerminationInfo::MachineStop => continue,
             TerminationInfo::Ub(res) if res == msg => {
                 // Got the expected result.
@@ -83,7 +83,7 @@ pub fn assert_ub_expr<T: TypeConv + Freeze, M: Memory>(expr: ValueExpr, msg: &st
 
 #[track_caller]
 pub fn assert_ill_formed<M: Memory>(prog: Program, msg: &str) {
-    let TerminationInfo::IllFormed(info) = run_program::<M>(prog, Default::default()) else {
+    let TerminationInfo::IllFormed(info) = run_program::<M>(prog) else {
         panic!("program is not ill formed!")
     };
     assert_eq!(info.get_internal(), msg, "program is ill-formed with a different error message");
@@ -91,12 +91,12 @@ pub fn assert_ill_formed<M: Memory>(prog: Program, msg: &str) {
 
 #[track_caller]
 pub fn assert_deadlock<M: Memory>(prog: Program) {
-    assert_eq!(run_program::<M>(prog, Default::default()), TerminationInfo::Deadlock);
+    assert_eq!(run_program::<M>(prog), TerminationInfo::Deadlock);
 }
 
 #[track_caller]
 pub fn assert_memory_leak<M: Memory>(prog: Program) {
-    assert_eq!(run_program::<M>(prog, Default::default()), TerminationInfo::MemoryLeak);
+    assert_eq!(run_program::<M>(prog), TerminationInfo::MemoryLeak);
 }
 
 /// Run the program multiple times. Checks if we get a data race in some execution
@@ -106,7 +106,7 @@ pub fn has_data_race<M: Memory>(prog: Program) -> bool {
     let data_race_string = minirust_rs::prelude::String::from_internal("Data race".to_string());
 
     for _ in 0..32 {
-        match run_program::<M>(prog, Default::default()) {
+        match run_program::<M>(prog) {
             TerminationInfo::MachineStop => {}
             TerminationInfo::Ub(ub) if ub == data_race_string => {
                 return true;

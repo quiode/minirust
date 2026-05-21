@@ -1,8 +1,14 @@
 use crate::{mock_write::MockWrite, *};
 
-/// Run the program and return its TerminationInfo.
+/// Run the program and return its TerminationInfo, using default memory params.
 /// Stdout/stderr are just forwarded to the host.
-pub fn run_program<M: Memory>(prog: Program, params: M::Params) -> TerminationInfo {
+pub fn run_program<M: Memory>(prog: Program) -> TerminationInfo {
+    run_program_with_config::<M>(prog, Default::default())
+}
+
+/// Like [`run_program`], but accepts explicit memory parameters.
+/// Stdout/stderr are just forwarded to the host.
+pub fn run_program_with_config<M: Memory>(prog: Program, params: M::Params) -> TerminationInfo {
     let out = std::io::stdout();
     let err = std::io::stderr();
 
@@ -13,13 +19,13 @@ pub fn run_program<M: Memory>(prog: Program, params: M::Params) -> TerminationIn
     }
 }
 
-/// Run the program and return stdout as a `Vec<String>`  or a termination info
-/// if it did not terminate correctly. Stderr is just forwarded to the host.
-pub fn get_stdout<M: Memory>(prog: Program, params: M::Params) -> Result<Vec<String>, TerminationInfo> {
+/// Run the program and return stdout as a `Vec<String>`, using default memory params,
+/// or a termination info if it did not terminate correctly. Stderr is just forwarded to the host.
+pub fn get_stdout<M: Memory>(prog: Program) -> Result<Vec<String>, TerminationInfo> {
     let out = MockWrite::new();
     let err = std::io::stderr();
 
-    let res = run::<M>(prog, params, out.clone(), err);
+    let res = run::<M>(prog, Default::default(), out.clone(), err);
     match res {
         Ok(never) => never,
         Err(TerminationInfo::MachineStop) => Ok(out.into_strings()),

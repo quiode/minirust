@@ -121,7 +121,7 @@ fn recursive_payload_test() {
 
     let p = p.finish_program(main_fn);
     dump_program(p);
-    assert_eq!(get_stdout::<BasicMem>(p, Default::default()).unwrap(), &["1", "2", "3", "4", "5"]);
+    assert_eq!(get_stdout::<BasicMem>(p).unwrap(), &["1", "2", "3", "4", "5"]);
 }
 
 /// Calls `get_unwind_payload()` with an empty payload stack. Results in ub.

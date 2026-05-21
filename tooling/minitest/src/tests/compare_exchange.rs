@@ -41,7 +41,7 @@ fn compare_exchange_success() {
     let p = program(&[f]);
 
     // Check that we exchange in the first case but not the second
-    let out = match get_stdout::<BasicMem>(p, Default::default()) {
+    let out = match get_stdout::<BasicMem>(p) {
         Ok(out) => out,
         Err(err) => panic!("{:?}", err),
     };
