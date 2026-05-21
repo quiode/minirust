@@ -31,12 +31,12 @@ impl MinirustMachineConfig {
         };
         match arg {
             "tree-borrows" => self.tree_borrows = Some(Default::default()),
-            "implicit-writes" =>
+            "tree-borrows-implicit-writes" =>
                 self.tree_borrows
                     .as_mut()
                     .unwrap_or_else(|| {
                         show_error!(
-                            "--minirust-tree-borrows must be set before --minirust-implicit-writes"
+                            "--minirust-tree-borrows must be set before --minirust-tree-borrows-implicit-writes"
                         )
                     })
                     .implicit_writes = true,
