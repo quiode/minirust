@@ -1,4 +1,4 @@
-//@ compile-flags: --minirust-tree-borrows --minirust-implicit-writes
+//@ compile-flags: --minirust-tree-borrows --minirust-tree-borrows-implicit-writes
 
 // Copied from the Miri test suite and modified for MiniRust.
 // Tests that UB is detected for reading from a mutable reference by another pointer

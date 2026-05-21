@@ -1,4 +1,4 @@
-//@ compile-flags: --minirust-tree-borrows --minirust-implicit-writes
+//@ compile-flags: --minirust-tree-borrows --minirust-tree-borrows-implicit-writes
 
 // Copied from the Miri test suite and modified for MiniRust.
 // This code no longer works using implicit writes in tree borrows. This code tests that.
