@@ -158,7 +158,7 @@ impl ReborrowSettings {
                         mk_perm(PermissionUnprot::ReservedIm, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
                     },
                 // Cannot occur: `safe_pointee()` returns `None` for these variants.
-                PtrType::Raw { .. } | PtrType::FnPtr | PtrType::VTablePtr(_) => panic!("unreachable"), // The function should have returned `None` for those at the start.
+                PtrType::Raw { .. } | PtrType::FnPtr | PtrType::VTablePtr(_) => unreachable!("safe_pointee() returns None for Raw, FnPtr, and VTablePtr; should have returned early on function entry"),
             }
         };
 
