@@ -43,7 +43,8 @@ fn run<M: Memory>(
     stderr: impl GcWrite,
 ) -> Result<!, TerminationInfo> {
     let res: NdResult<!> = try {
-        let mut machine = Machine::<M>::new(prog, params, DynWrite::new(stdout), DynWrite::new(stderr))?;
+        let mut machine =
+            Machine::<M>::new(prog, params, DynWrite::new(stdout), DynWrite::new(stderr))?;
 
         loop {
             machine.step()?;
