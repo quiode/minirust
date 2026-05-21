@@ -1,4 +1,4 @@
-//@ compile-flags: --minirust-tree-borrows --minirust-implicit-writes
+//@ compile-flags: --minirust-tree-borrows --minirust-tree-borrows-implicit-writes
 
 // Copied from the Miri test suite and modified for MiniRust.
 // Tests that inserting an implicit write to a read-only allocation generates the correct error message.
