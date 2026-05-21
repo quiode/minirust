@@ -26,7 +26,7 @@ fn atomic_fetch_success() {
     let f = function(Ret::No, 0, &locals, &[b0, b1, b2, b3, b4]);
     let p = program(&[f]);
 
-    let output = get_stdout::<BasicMem>(p, Default::default()).unwrap();
+    let output = get_stdout::<BasicMem>(p).unwrap();
     assert_eq!(output[0], "4");
     assert_eq!(output[1], "2");
 }

@@ -176,7 +176,7 @@ fn weird_wrong_vtable_right_trait() {
     };
 
     let p = p.finish_program(main);
-    assert_eq!(get_stdout::<BasicMem>(p, Default::default()).unwrap(), &["-1"]);
+    assert_eq!(get_stdout::<BasicMem>(p).unwrap(), &["-1"]);
 }
 
 // UB tests
