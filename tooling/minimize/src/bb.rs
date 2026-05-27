@@ -901,6 +901,7 @@ fn is_panic_fn(name: &str) -> bool {
         "core::slice::index::slice_index_order_fail",
         "core::slice::index::slice_index_fail",
         "core::str::slice_error_fail",
+        "alloc::alloc::__rust_alloc_error_handler",
         "std::rt::panic_fmt",
     ];
     fns.contains(&name)
