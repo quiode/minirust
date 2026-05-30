@@ -138,12 +138,12 @@ impl ReborrowSettings {
                     if implicit_writes_enabled && inside {
                         // We cannot use `Unique` for the outside part.
                         mk_perm(PermissionUnprot::Unique, PermissionProt::Unique)
-                    } else if protected.yes() || frozen {
-                        // We also use this for protected `&mut UnsafeCell` as otherwise adding `noalias` would not be sound.
-                        mk_perm(PermissionUnprot::Reserved, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
                     } else {
-                        // Unprotected mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
-                        mk_perm(PermissionUnprot::ReservedIm, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
+                        // Unprotected interior-mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
+                        mk_perm(
+                          if frozen { PermissionUnprot::Reserved } else { PermissionUnprot::ReservedIm },
+                          PermissionProt::Reserved { had_local_read: false, had_foreign_read: false }
+                        )
                     },
                 // Boxes
                 PtrType::Box { .. } =>
