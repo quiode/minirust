@@ -98,8 +98,8 @@ impl ReborrowSettings {
         let Some(pointee_info) = ptr_type.safe_pointee() else {
             return None;
         };
-        if matches!(ptr_type, PtrType::Ref { mutbl: Mutability::Mutable, pointee } if !pointee.unpin) {
-            // Mutable reference to pinning type: retagging is a NOP.
+        if matches!(ptr_type, PtrType::Ref { mutbl: Mutability::Mutable, pointee } | PtrType::Box { pointee } if !pointee.unpin) {
+            // Mutable reference / Box to pinning type: retagging is a NOP.
             // FIXME: with `UnsafePinned`, this should do proper per-byte tracking.
             return None;
         }

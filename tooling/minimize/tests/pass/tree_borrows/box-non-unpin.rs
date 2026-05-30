@@ -1,7 +1,9 @@
 //@ compile-flags: --minirust-tree-borrows
 
-// In `reborrow_settings`, if a Box<T> is !Unpin, we do NOT leave the function early and return None.
-// Therefore, the box receives a (weak) protector on function entry, and this test has UB.
+// In `reborrow_settings`, if a Box<T> is !Unpin, previously we did NOT leave the function early and did NOT return None.
+// This behavior differs to Miri, where we do return None.
+// This tests failed using the old behavior, but passed in Miri.
+// The behavior has been changed in https://github.com/minirust/minirust/issues/291 and now matches the one in Miri.
 
 extern crate intrinsics;
 use intrinsics::*;
@@ -17,7 +19,6 @@ fn f(_b: Box<NotUnpin>, xraw: *mut i32) {
 
 fn main() {
     // Box::new needs the global allocator which is unsupported; allocate manually.
-    // See also `tests/pass/tree_borrows/no_implicit_writes.rs` for the same pattern.
     let ptr = unsafe { allocate(4, 4) } as *mut NotUnpin;
     unsafe { ptr.write(NotUnpin(0, PhantomPinned)) };
 
