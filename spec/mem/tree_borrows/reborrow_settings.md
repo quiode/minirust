@@ -150,12 +150,13 @@ impl ReborrowSettings {
                     if implicit_writes_enabled && inside {
                         // Boxes are treated the same as mutable references.
                         mk_perm(PermissionUnprot::Unique, PermissionProt::Unique)
-                    } else if protected.yes() || frozen {
+                    } else {
                         // We also use this for protected `Box<UnsafeCell>` as otherwise adding
                         // `noalias` would not be sound.
-                        mk_perm(PermissionUnprot::Reserved, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
-                    } else {
-                        mk_perm(PermissionUnprot::ReservedIm, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
+                        mk_perm(
+                          if frozen { PermissionUnprot::Reserved } else { PermissionUnprot::ReservedIm },
+                          PermissionProt::Reserved { had_local_read: false, had_foreign_read: false }
+                        )
                     },
                 // Cannot occur: `safe_pointee()` returns `None` for these variants.
                 PtrType::Raw { .. } | PtrType::FnPtr | PtrType::VTablePtr(_) => unreachable!("safe_pointee() returns None for Raw, FnPtr, and VTablePtr; should have returned early on function entry"),
