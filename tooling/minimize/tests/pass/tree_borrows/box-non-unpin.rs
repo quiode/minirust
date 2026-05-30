@@ -18,7 +18,7 @@ fn f(_b: Box<NotUnpin>, xraw: *mut i32) {
 }
 
 fn main() {
-    // Box::new needs the global allocator which is unsupported; allocate manually.
+    // Box::new is currently not supported: https://github.com/minirust/minirust/issues/202, so allocate manually.
     let ptr = unsafe { allocate(4, 4) } as *mut NotUnpin;
     unsafe { ptr.write(NotUnpin(0, PhantomPinned)) };
 
