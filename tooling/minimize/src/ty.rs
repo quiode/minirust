@@ -155,6 +155,8 @@ impl<'tcx> Ctxt<'tcx> {
                     Vec::new()
                 }
             }
+            // pattern types do not affect the UnsafeCell positions
+            rs::TyKind::Pat(ty, _) => self.cells_in_sized_ty(*ty, span),
             x => rs::span_bug!(span, "cells_in_sized_ty: TyKind not supported: {x:?}"),
         }
     }
