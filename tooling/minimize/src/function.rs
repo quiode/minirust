@@ -46,6 +46,8 @@ impl<'cx, 'tcx> std::ops::DerefMut for FnCtxt<'cx, 'tcx> {
 impl<'cx, 'tcx> FnCtxt<'cx, 'tcx> {
     pub fn new(instance: rs::Instance<'tcx>, cx: &'cx mut Ctxt<'tcx>) -> Self {
         let body = cx.tcx.instance_mir(instance.def);
+        let attrs = rustc_hir::find_attr!(cx.tcx, instance.def_id(), RustcNoWritable);
+        println!("Got attributes {attrs:?} for function {instance:?}");
         // We eagerly instantiate everything upfront once.
         // Then nothing else has to worry about generics.
         let body = cx.tcx.instantiate_and_normalize_erasing_regions(

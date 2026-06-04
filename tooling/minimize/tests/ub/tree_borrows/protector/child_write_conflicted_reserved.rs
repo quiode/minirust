@@ -1,7 +1,9 @@
 //@ compile-flags: --minirust-tree-borrows
-
+#![allow(internal_features)]
+#![feature(rustc_attrs)]
 // Check that a foreign read makes future child writes to this mutable reference UB.
 
+#[rustc_no_writable]
 fn foo(x: *mut i32, y: &mut i32) {
     // (x, Reserved) -> (y, P[Reserved (conflicted: false)])
     unsafe { assert!(*x == 31) }; // (x, Reserved) -> (y, P[Reserved (conflicted: true)])
