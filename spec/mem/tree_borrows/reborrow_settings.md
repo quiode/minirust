@@ -137,7 +137,9 @@ impl ReborrowSettings {
                 PtrType::Ref { mutbl: Mutability::Mutable, .. } | PtrType::Box { .. } =>
                     if implicit_writes_enabled && inside {
                         // The implicit write only happens on the inside.
-                        mk_perm(PermissionUnprot::Unique, PermissionProt::Unique)
+                        // `implicit_writes_enabled` implies `protected.yes()`, so this case is always protected.
+                        assert!(protected.yes());
+                        Permission::Prot(PermissionProt::Unique)
                     } else {
                         // Unprotected interior-mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
                         mk_perm(
@@ -153,7 +155,7 @@ impl ReborrowSettings {
         let inside = pointee_info.unsafe_cells.freeze_mask(pointee_info.layout, ptr.metadata, vtable_lookup).map(|freeze|
             perm(/* inside */ true, freeze)
         );
-        let outside = perm(false, pointee_info.freeze);
+        let outside = perm(/* inside */ false, pointee_info.freeze);
 
         Some(ReborrowSettings { protected, inside, outside })
     }

@@ -7,10 +7,10 @@
 use std::cell::UnsafeCell;
 
 fn main() {
-    normal();
-    unsafe_cell();
-    box_test();
-    as_mut_ptr_test()
+    normal(); // passing version of: tooling/minimize/tests/ub/tree_borrows/implicit_writes/ptr_write.rs
+    unsafe_cell(); // passing version of: tooling/minimize/tests/ub/tree_borrows/implicit_writes/ptr_write_unsafe_cell.rs
+    box_test(); // passing version of: tooling/minimize/tests/ub/tree_borrows/implicit_writes/ptr_write_box.rs
+    as_mut_ptr_test() // passing version of: tooling/minimize/tests/ub/tree_borrows/implicit_writes/as_mut_ptr.rs
 }
 
 fn normal() {
