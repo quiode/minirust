@@ -71,9 +71,9 @@ impl Permission {
 }
 ```
 
-When a new node is created, it causes an implicit access, which is either a Read or a Write access.
+When a new node is created, it may cause an implicit (read or write) access.
 This is so the optimizer can insert reads / writes as soon as a reference is created.
-Note that the implicit operation is not universal, and depends on the permission.
+The presence and type of the access depends on the permission.
 The details are defined by the `init_access` function.
 
 ```rust
