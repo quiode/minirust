@@ -136,7 +136,7 @@ impl ReborrowSettings {
                 // Mutable references and Boxes (Boxes are treated the same as mutable references)
                 PtrType::Ref { mutbl: Mutability::Mutable, .. } | PtrType::Box { .. } =>
                     if implicit_writes_enabled && inside {
-                        // We cannot use `Unique` for the outside part.
+                        // The implicit write only happens on the inside.
                         mk_perm(PermissionUnprot::Unique, PermissionProt::Unique)
                     } else {
                         // Unprotected interior-mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
