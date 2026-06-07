@@ -151,7 +151,7 @@ impl ReborrowSettings {
         };
 
         let inside = pointee_info.unsafe_cells.freeze_mask(pointee_info.layout, ptr.metadata, vtable_lookup).map(|freeze|
-            perm(true, freeze)
+            perm(/* inside */ true, freeze)
         );
         let outside = perm(false, pointee_info.freeze);
 
