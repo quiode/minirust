@@ -58,8 +58,8 @@ pub struct TreeBorrowsParams {
 
 ```rust
 pub struct TreeBorrowsMemory<T: Target> {
-    mem: BasicMemory<T, Path, TreeBorrowsAllocationExtra>,
     params: TreeBorrowsParams,
+    mem: BasicMemory<T, Path, TreeBorrowsAllocationExtra>,
 }
 
 pub struct TreeBorrowsFrameExtra {
