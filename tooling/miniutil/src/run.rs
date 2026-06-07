@@ -25,7 +25,7 @@ pub fn get_stdout<M: Memory>(prog: Program) -> Result<Vec<String>, TerminationIn
     let out = MockWrite::new();
     let err = std::io::stderr();
 
-    let res = run::<M>(prog, Default::default(), out.clone(), err);
+    let res = run::<M>(prog, M::Params::default(), out.clone(), err);
     match res {
         Ok(never) => never,
         Err(TerminationInfo::MachineStop) => Ok(out.into_strings()),
