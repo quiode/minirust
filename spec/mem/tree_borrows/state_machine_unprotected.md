@@ -86,7 +86,7 @@ impl PermissionUnprot {
 
     fn init_access(self) -> Option<AccessKind> {
         // Everything except for `Cell` gets an initial read access.
-        // Write's are not possible for unprotected references.
+        // We never perform implicit writes for unprotected references.
         match self {
             PermissionUnprot::Cell => None,
             _ => Some(AccessKind::Read)

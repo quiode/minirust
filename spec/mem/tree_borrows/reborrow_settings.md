@@ -133,11 +133,13 @@ impl ReborrowSettings {
                     } else {
                         mk_perm(PermissionUnprot::Cell, PermissionProt::Cell)
                     },
-                // Mutable references
-                PtrType::Ref { mutbl: Mutability::Mutable, .. } =>
+                // Mutable references and Boxes (Boxes are treated the same as mutable references)
+                PtrType::Ref { mutbl: Mutability::Mutable, .. } | PtrType::Box { .. } =>
                     if implicit_writes_enabled && inside {
-                        // We cannot use `Unique` for the outside part.
-                        mk_perm(PermissionUnprot::Unique, PermissionProt::Unique)
+                        // The implicit write only happens on the inside.
+                        // `implicit_writes_enabled` implies `protected.yes()`, so this case is always protected.
+                        assert!(protected.yes());
+                        Permission::Prot(PermissionProt::Unique)
                     } else {
                         // Unprotected interior-mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
                         mk_perm(
@@ -145,27 +147,15 @@ impl ReborrowSettings {
                           PermissionProt::Reserved { had_local_read: false, had_foreign_read: false }
                         )
                     },
-                // Boxes
-                PtrType::Box { .. } =>
-                    if implicit_writes_enabled && inside {
-                        // Boxes are treated the same as mutable references.
-                        mk_perm(PermissionUnprot::Unique, PermissionProt::Unique)
-                    } else if protected.yes() || frozen {
-                        // We also use this for protected `Box<UnsafeCell>` as otherwise adding
-                        // `noalias` would not be sound.
-                        mk_perm(PermissionUnprot::Reserved, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
-                    } else {
-                        mk_perm(PermissionUnprot::ReservedIm, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false })
-                    },
                 // Cannot occur: `safe_pointee()` returns `None` for these variants.
                 PtrType::Raw { .. } | PtrType::FnPtr | PtrType::VTablePtr(_) => unreachable!("safe_pointee() returns None for Raw, FnPtr, and VTablePtr; should have returned early on function entry"),
             }
         };
 
         let inside = pointee_info.unsafe_cells.freeze_mask(pointee_info.layout, ptr.metadata, vtable_lookup).map(|freeze|
-            perm(true, freeze)
+            perm(/* inside */ true, freeze)
         );
-        let outside = perm(false, pointee_info.freeze);
+        let outside = perm(/* inside */ false, pointee_info.freeze);
 
         Some(ReborrowSettings { protected, inside, outside })
     }
