@@ -93,8 +93,10 @@ impl ReborrowSettings {
         ptr: Pointer<TreeBorrowsProvenance>,
         ptr_type: PtrType,
         fn_entry: bool,
+        params: TreeBorrowsParams,
         vtable_lookup: impl Fn(ThinPointer<TreeBorrowsProvenance>) -> crate::lang::VTable + 'static,
     ) -> Option<Self> {
+        // Returns None for `Raw`, `FnPtr` and `VTablePtr`, so `ptr_type` can only be `Ref` and `Box` from here.
         let Some(pointee_info) = ptr_type.safe_pointee() else {
             return None;
         };
@@ -115,26 +117,45 @@ impl ReborrowSettings {
             Protected::No
         };
 
-        // Helper to choose the correct permission, based on protection.
-        let mk_perm = |unprot, prot| if protected.yes() { Permission::Prot(prot) } else { Permission::Unprot(unprot) };
+        // Implicit writes are only performed for protected references, and only if globally enabled.
+        let implicit_writes_enabled = protected.yes() && params.implicit_writes;
 
-        // Determine permissions.
-        let no_cell_perm = match ptr_type {
-            // Shared references are frozen.
-            PtrType::Ref { mutbl: Mutability::Immutable, .. } => mk_perm(PermissionUnprot::Frozen, PermissionProt::Frozen { had_local_read: false }),
-            // Mutable references and Boxes are reserved.
-            _ => mk_perm(PermissionUnprot::Reserved, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false }),
+        // Helper to compute the permission, given whether it is inside the pointee and whether it is frozen.
+        let perm = |inside: bool, frozen: bool| {
+            // Helper to choose the correct permission, based on protection.
+            let mk_perm = |unprot, prot| if protected.yes() { Permission::Prot(prot) } else { Permission::Unprot(unprot) };
+
+            match ptr_type {
+                // Shared references
+                PtrType::Ref { mutbl: Mutability::Immutable, .. } =>
+                    if frozen {
+                        mk_perm(PermissionUnprot::Frozen, PermissionProt::Frozen { had_local_read: false })
+                    } else {
+                        mk_perm(PermissionUnprot::Cell, PermissionProt::Cell)
+                    },
+                // Mutable references and Boxes (Boxes are treated the same as mutable references)
+                PtrType::Ref { mutbl: Mutability::Mutable, .. } | PtrType::Box { .. } =>
+                    if implicit_writes_enabled && inside {
+                        // The implicit write only happens on the inside.
+                        // `implicit_writes_enabled` implies `protected.yes()`, so this case is always protected.
+                        assert!(protected.yes());
+                        Permission::Prot(PermissionProt::Unique)
+                    } else {
+                        // Unprotected interior-mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
+                        mk_perm(
+                          if frozen { PermissionUnprot::Reserved } else { PermissionUnprot::ReservedIm },
+                          PermissionProt::Reserved { had_local_read: false, had_foreign_read: false }
+                        )
+                    },
+                // Cannot occur: `safe_pointee()` returns `None` for these variants.
+                PtrType::Raw { .. } | PtrType::FnPtr | PtrType::VTablePtr(_) => unreachable!("safe_pointee() returns None for Raw, FnPtr, and VTablePtr; should have returned early on function entry"),
+            }
         };
-        let cell_perm = match ptr_type {
-            // Shared references to UnsafeCell use the "transparent" Cell permission.
-            PtrType::Ref { mutbl: Mutability::Immutable, .. } => mk_perm(PermissionUnprot::Cell, PermissionProt::Cell),
-            // Unprotected mutable references and boxes start in `ReservedIm`, but if they are protected we ignore the `Im`
-            _ => mk_perm(PermissionUnprot::ReservedIm, PermissionProt::Reserved { had_local_read: false, had_foreign_read: false }),
-        };
+
         let inside = pointee_info.unsafe_cells.freeze_mask(pointee_info.layout, ptr.metadata, vtable_lookup).map(|freeze|
-            if freeze { no_cell_perm } else { cell_perm }
+            perm(/* inside */ true, freeze)
         );
-        let outside = if pointee_info.freeze { no_cell_perm } else { cell_perm };
+        let outside = perm(/* inside */ false, pointee_info.freeze);
 
         Some(ReborrowSettings { protected, inside, outside })
     }

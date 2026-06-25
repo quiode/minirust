@@ -51,7 +51,9 @@ impl<Provenance> AbstractByte<Provenance> {
 
 ## Memory interface
 
-The MiniRust memory interface is described by the following (not-yet-complete) trait definition:
+The MiniRust memory interface is described by the following (not-yet-complete) trait definition.
+A memory model can be configured through parameters that toggle specific or experimental behavior, such as enabling implicit writes in the Tree Borrows memory model.
+These parameters are bundled into the `Params` associated type and passed to the `new` function at construction time:
 
 ```rust
 /// The "kind" of an allocation is used to distinguish, for instance, stack from heap memory.
@@ -84,7 +86,11 @@ pub trait Memory {
     /// Extra information for each stack frame.
     type FrameExtra;
 
-    fn new() -> Self;
+    /// Parameters controlling memory model behavior, passed at construction time.
+    type Params: Default;
+
+    /// Create a new instance of the memory model with the given parameters.
+    fn new(params: Self::Params) -> Self;
 
     /// Create a new allocation.
     /// The initial contents of the allocation are `AbstractByte::Uninit`.
