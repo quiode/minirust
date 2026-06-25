@@ -311,8 +311,10 @@ impl<T: Target> Memory for BasicMemory<T> {
     /// The basic memory model does not need any per-frame data,
     /// so we set `FrameExtra` to the unit type.
     type FrameExtra = ();
+    /// The basic memory model does not have any configuration parameters.
+    type Params = ();
 
-    fn new() -> Self {
+    fn new(_params: ()) -> Self {
         Self::new()
     }
 
