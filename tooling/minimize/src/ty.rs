@@ -1,3 +1,5 @@
+use rustc_middle::ty::Unnormalized;
+
 use crate::*;
 
 impl<'tcx> Ctxt<'tcx> {
@@ -153,6 +155,8 @@ impl<'tcx> Ctxt<'tcx> {
                     Vec::new()
                 }
             }
+            // pattern types do not affect the UnsafeCell positions
+            rs::TyKind::Pat(ty, _) => self.cells_in_sized_ty(*ty, span),
             x => rs::span_bug!(span, "cells_in_sized_ty: TyKind not supported: {x:?}"),
         }
     }
@@ -277,7 +281,9 @@ impl<'tcx> Ctxt<'tcx> {
                 let ty = field.ty(self.tcx, sref);
                 // Field types can be non-normalized even if the ADT type was normalized
                 // (due to associated types on the fields).
-                let ty = self.tcx.normalize_erasing_regions(self.typing_env(), ty);
+                let ty = self
+                    .tcx
+                    .normalize_erasing_regions(self.typing_env(), Unnormalized::new_wip(ty));
                 let ty = self.translate_ty(ty, span);
                 let offset = match shape {
                     Some(shape) => shape.offset(i.into()),
