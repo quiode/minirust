@@ -93,8 +93,7 @@ impl ReborrowSettings {
         ptr: Pointer<TreeBorrowsProvenance>,
         ptr_type: PtrType,
         fn_entry: bool,
-        params: TreeBorrowsParams,
-        no_implicit_writes: bool,
+        implicit_writes: bool,
         vtable_lookup: impl Fn(ThinPointer<TreeBorrowsProvenance>) -> crate::lang::VTable + 'static,
     ) -> Option<Self> {
         // Returns None for `Raw`, `FnPtr` and `VTablePtr`, so `ptr_type` can only be `Ref` and `Box` from here.
@@ -119,8 +118,9 @@ impl ReborrowSettings {
         };
 
         // Implicit writes are only performed for protected references, only if globally enabled,
-        // and only if the function has not opted out via the `NoImplicitWrites` / `#[rustc_no_writable]` attribute.
-        let implicit_writes_enabled = protected.yes() && params.implicit_writes && !no_implicit_writes;
+        // and only if the function has not opted out via the `NoWritable` / `#[rustc_no_writable]` attribute.
+        // The global setting and the per-function opt-out have already been combined into `implicit_writes` by the caller.
+        let implicit_writes_enabled = protected.yes() && implicit_writes;
 
         // Helper to compute the permission, given whether it is inside the pointee and whether it is frozen.
         let perm = |inside: bool, frozen: bool| {

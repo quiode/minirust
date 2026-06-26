@@ -242,10 +242,12 @@ impl<T: Target> Memory for TreeBorrowsMemory<T> {
         ptr: Pointer<Self::Provenance>,
         ptr_type: PtrType,
         fn_entry: bool,
-        no_implicit_writes: bool,
+        implicit_writes: bool,
         vtable_lookup: impl Fn(ThinPointer<Self::Provenance>) -> crate::lang::VTable + 'static,
     ) -> Result<Pointer<Self::Provenance>> {
-        ret(if let Some(perms) = ReborrowSettings::new(ptr, ptr_type, fn_entry, self.params, no_implicit_writes, vtable_lookup) {
+        // Combine the per-function flag with the global Tree Borrows setting.
+        let implicit_writes = implicit_writes && self.params.implicit_writes;
+        ret(if let Some(perms) = ReborrowSettings::new(ptr, ptr_type, fn_entry, implicit_writes, vtable_lookup) {
             self.reborrow(ptr.thin_pointer, perms, frame_extra)?.widen(ptr.metadata)
         } else {
             ptr

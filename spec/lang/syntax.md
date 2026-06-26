@@ -477,7 +477,7 @@ pub enum FunctionAttribute {
     /// Disables implicit writes for references passed to this function,
     /// even when implicit writes are globally enabled.
     /// Corresponds to `#[rustc_no_writable]`.
-    NoImplicitWrites,
+    NoWritable,
 }
 
 /// A MiniRust function.

@@ -50,7 +50,7 @@ impl<'cx, 'tcx> FnCtxt<'cx, 'tcx> {
         let body = cx.tcx.instance_mir(instance.def);
         let mut attributes = Set::new();
         if rustc_hir::find_attr!(cx.tcx, instance.def_id(), RustcNoWritable) {
-            attributes.insert(FunctionAttribute::NoImplicitWrites);
+            attributes.insert(FunctionAttribute::NoWritable);
         }
         // We eagerly instantiate everything upfront once.
         // Then nothing else has to worry about generics.
