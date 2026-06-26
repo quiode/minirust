@@ -94,7 +94,7 @@ To do this, we first lift retagging from pointers to compound values.
 ```rust
 impl<M: Memory> Machine<M> {
     /// Find all pointers in this value, ensure they are valid, and retag them.
-    fn retag_val(&mut self, val: Value<M>, ty: Type, fn_entry: bool) -> Result<Value<M>> {
+    fn retag_val(&mut self, val: Value<M>, ty: Type, fn_entry: bool, no_implicit_writes: bool) -> Result<Value<M>> {
         ret(match (val, ty) {
             // no (identifiable) pointers
             (Value::Int(..) | Value::Bool(..) | Value::Union(..), _) =>
@@ -102,16 +102,16 @@ impl<M: Memory> Machine<M> {
             // base case
             (Value::Ptr(ptr), Type::Ptr(ptr_type)) => {
                 let lookup = self.vtable_lookup();
-                let val = self.mutate_cur_frame(|frame, mem| { mem.retag_ptr(&mut frame.extra, ptr, ptr_type, fn_entry, lookup) })?;
+                let val = self.mutate_cur_frame(|frame, mem| { mem.retag_ptr(&mut frame.extra, ptr, ptr_type, fn_entry, no_implicit_writes, lookup) })?;
                 Value::Ptr(val)
             }
             // recurse into tuples/arrays/enums
             (Value::Tuple(vals), Type::Tuple { sized_fields, .. }) =>
-                Value::Tuple(vals.zip(sized_fields).try_map(|(val, (_offset, ty))| self.retag_val(val, ty, fn_entry))?),
+                Value::Tuple(vals.zip(sized_fields).try_map(|(val, (_offset, ty))| self.retag_val(val, ty, fn_entry, no_implicit_writes))?),
             (Value::Tuple(vals), Type::Array { elem: ty, .. }) =>
-                Value::Tuple(vals.try_map(|val| self.retag_val(val, ty, fn_entry))?),
+                Value::Tuple(vals.try_map(|val| self.retag_val(val, ty, fn_entry, no_implicit_writes))?),
             (Value::Variant { discriminant, data }, Type::Enum { variants, .. }) =>
-                Value::Variant { discriminant, data: self.retag_val(data, variants[discriminant].ty, fn_entry)? },
+                Value::Variant { discriminant, data: self.retag_val(data, variants[discriminant].ty, fn_entry, no_implicit_writes)? },
             _ =>
                 panic!("this value does not have that type"),
         })
@@ -123,7 +123,8 @@ impl<M: Memory> Machine<M> {
         // WF ensures all valid expressions are sized, so we can invoke the load.
         // This also ensures the value in the place satsifies the language invariant.
         let val = self.place_load(place, ty)?;
-        let val = self.retag_val(val, ty, fn_entry)?;
+        let no_implicit_writes = self.cur_frame().func.attributes.contains(FunctionAttribute::NoImplicitWrites);
+        let val = self.retag_val(val, ty, fn_entry, no_implicit_writes)?;
         self.place_store(place, val, ty)?;
 
         ret(())

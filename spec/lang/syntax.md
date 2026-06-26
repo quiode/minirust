@@ -472,6 +472,14 @@ pub struct Program {
 pub struct LocalName(pub libspecr::Name);
 pub struct BbName(pub libspecr::Name);
 
+/// Attributes that can be applied to a MiniRust function.
+pub enum FunctionAttribute {
+    /// Disables implicit writes for references passed to this function,
+    /// even when implicit writes are globally enabled.
+    /// Corresponds to `#[rustc_no_writable]`.
+    NoImplicitWrites,
+}
+
 /// A MiniRust function.
 pub struct Function {
     /// The locals of this function, and their type.
@@ -487,6 +495,9 @@ pub struct Function {
     pub blocks: Map<BbName, BasicBlock>,
     /// The basic block where execution starts.
     pub start: BbName,
+
+    /// Function-level attributes that affect interpreter behavior.
+    pub attributes: Set<FunctionAttribute>,
 }
 
 /// A basic block is a sequence of statements followed by a terminator.

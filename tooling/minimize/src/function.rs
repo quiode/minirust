@@ -27,6 +27,8 @@ pub struct FnCtxt<'cx, 'tcx> {
 
     pub locals: Map<LocalName, Type>,
     pub blocks: Map<BbName, BasicBlock>,
+
+    attributes: Set<FunctionAttribute>,
 }
 
 impl<'cx, 'tcx> std::ops::Deref for FnCtxt<'cx, 'tcx> {
@@ -46,8 +48,10 @@ impl<'cx, 'tcx> std::ops::DerefMut for FnCtxt<'cx, 'tcx> {
 impl<'cx, 'tcx> FnCtxt<'cx, 'tcx> {
     pub fn new(instance: rs::Instance<'tcx>, cx: &'cx mut Ctxt<'tcx>) -> Self {
         let body = cx.tcx.instance_mir(instance.def);
-        let attrs = rustc_hir::find_attr!(cx.tcx, instance.def_id(), RustcNoWritable);
-        println!("Got attributes {attrs:?} for function {instance:?}");
+        let mut attributes = Set::new();
+        if rustc_hir::find_attr!(cx.tcx, instance.def_id(), RustcNoWritable) {
+            attributes.insert(FunctionAttribute::NoImplicitWrites);
+        }
         // We eagerly instantiate everything upfront once.
         // Then nothing else has to worry about generics.
         let body = cx.tcx.instantiate_and_normalize_erasing_regions(
@@ -72,6 +76,7 @@ impl<'cx, 'tcx> FnCtxt<'cx, 'tcx> {
             locals_smir,
             next_bb: 0,
             next_local: 0,
+            attributes,
         }
     }
 
@@ -199,6 +204,7 @@ impl<'cx, 'tcx> FnCtxt<'cx, 'tcx> {
             blocks: self.blocks,
             start: init_bb,
             calling_convention: translate_calling_convention(self.abi.conv),
+            attributes: self.attributes,
         };
 
         f

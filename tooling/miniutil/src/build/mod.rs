@@ -160,6 +160,7 @@ pub struct FunctionBuilder {
     start: BbName,
     ret: Option<LocalName>,
     conv: CallingConvention,
+    attributes: Set<FunctionAttribute>,
 
     cur_block: Option<CurBlock>,
 
@@ -177,6 +178,7 @@ impl FunctionBuilder {
             start: BbName(Name::from_internal(0)),
             ret: None,
             conv: CallingConvention::Rust,
+            attributes: Set::new(),
             cur_block: None,
             next_block: 0,
             next_local: 0,
@@ -232,6 +234,7 @@ impl FunctionBuilder {
             calling_convention: self.conv,
             blocks: self.blocks,
             start: self.start,
+            attributes: self.attributes,
         }
     }
 
@@ -282,6 +285,11 @@ impl FunctionBuilder {
     /// Change the calling convention of the current function.
     pub fn set_conv(&mut self, conv: CallingConvention) {
         self.conv = conv;
+    }
+
+    /// Add a [FunctionAttribute] to the current function.
+    pub fn declare_attribute(&mut self, attr: FunctionAttribute) {
+        self.attributes.insert(attr);
     }
 
     /// Build one or multiple cleanup blocks. The name of the first block is returned.
