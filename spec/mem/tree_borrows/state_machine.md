@@ -31,17 +31,10 @@ impl Permission {
         Ok(())
     }
 
-    fn init_access(self) -> Option<AccessKind> {
-        match self {
-            Permission::Unprot(p) => p.init_access(),
-            Permission::Prot(p) => p.init_access()
-        }
-    }
-
     /// When a protector is released, we transition to the unprotected state machine.
     /// Additionally, we might emit a _protector end access_, depending on our current state.
     /// The second state indicates that access, or is `None` when no access should happen.
-    /// 
+    ///
     /// This method may only be called when a protector is present.
     fn unprotect(self) -> (Permission, Option<AccessKind>) {
         match self {
@@ -73,6 +66,22 @@ impl Permission {
             matches!(self, Permission::Prot(_))
         } else {
             matches!(self, Permission::Unprot(_))
+        }
+    }
+}
+```
+
+When a new node is created, it may cause an implicit (read or write) access.
+This is so the optimizer can insert reads / writes as soon as a reference is created.
+The presence and type of the access depends on the permission.
+The details are defined by the `init_access` function.
+
+```rust
+impl Permission {
+    fn init_access(self) -> Option<AccessKind> {
+        match self {
+            Permission::Unprot(p) => p.init_access(),
+            Permission::Prot(p) => p.init_access()
         }
     }
 }

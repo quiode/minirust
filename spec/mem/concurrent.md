@@ -42,9 +42,9 @@ It differs in both store and load where we also take the `Atomicity` of an opera
 
 ```rust
 impl<M: Memory> ConcurrentMemory<M> {
-    pub fn new() -> Self {
+    pub fn new(params: M::Params) -> Self {
         Self {
-            memory: M::new(),
+            memory: M::new(params),
             accesses: list![],
         }
     }

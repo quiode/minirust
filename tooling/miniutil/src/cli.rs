@@ -1,9 +1,12 @@
 //! This module provides utilities for the terminal user-interface.
 //! That is, it bundles common command line argument parsing and error message rendering.
 
-use minirust_rs::{lang::Program, prelude::TerminationInfo};
+use minirust_rs::{lang::Program, mem::TreeBorrowsParams, prelude::TerminationInfo};
 
-use crate::{BasicMem, TreeBorrowMem, run::run_program};
+use crate::{
+    BasicMem, TreeBorrowMem,
+    run::{run_program, run_program_with_config},
+};
 
 pub fn show_error(msg: &impl std::fmt::Display) -> ! {
     eprintln!("fatal error: {msg}");
@@ -15,14 +18,9 @@ macro_rules! show_error {
     ($($tt:tt)*) => {$crate::cli::show_error(&format_args!($($tt)*)) };
 }
 
+#[derive(Default)]
 pub struct MinirustMachineConfig {
-    tree_borrows: bool,
-}
-
-impl Default for MinirustMachineConfig {
-    fn default() -> Self {
-        Self { tree_borrows: false }
-    }
+    tree_borrows: Option<TreeBorrowsParams>,
 }
 
 impl MinirustMachineConfig {
@@ -32,7 +30,16 @@ impl MinirustMachineConfig {
             return false;
         };
         match arg {
-            "tree-borrows" => self.tree_borrows = true,
+            "tree-borrows" => self.tree_borrows = Some(Default::default()),
+            "tree-borrows-implicit-writes" =>
+                self.tree_borrows
+                    .as_mut()
+                    .unwrap_or_else(|| {
+                        show_error!(
+                            "--minirust-tree-borrows must be set before --minirust-tree-borrows-implicit-writes"
+                        )
+                    })
+                    .implicit_writes = true,
             _ => show_error!("Unknown argument --minirust-{arg}!"),
         }
         true
@@ -40,8 +47,8 @@ impl MinirustMachineConfig {
 
     /// Runs the program using [`run_program`]. The memory model/machine is constructed according to this config.
     pub fn run_prog(&self, prog: Program) -> TerminationInfo {
-        if self.tree_borrows {
-            run_program::<TreeBorrowMem>(prog)
+        if let Some(params) = self.tree_borrows {
+            run_program_with_config::<TreeBorrowMem>(prog, params)
         } else {
             run_program::<BasicMem>(prog)
         }

@@ -89,8 +89,10 @@ impl PermissionProt {
 
     fn init_access(self) -> Option<AccessKind> {
         // Everything except for `Cell` gets an initial read access.
+        // `Unique` gets an initial write.
         match self {
             PermissionProt::Cell => None,
+            PermissionProt::Unique => Some(AccessKind::Write),
             _ => Some(AccessKind::Read)
         }
     }
